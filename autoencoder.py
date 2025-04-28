@@ -77,11 +77,11 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001) # optymalizator Adam,
 
 # aktualizowana wparametry to wagi i biasy
 # wagi to liczby mówiące jak mocno dane wejście wpływa na inny wynik
-# biady to przesunięcia dodane do wyniku
+# biasy to przesunięcia dodane do wyniku
 # parametr = wagi + biasy
 # wagi i biasy rozróżnia się dla każdego wejścia, modyfikuje je się w celu minimalizacji błędu reprezentowanego przez funkcję straty
 
-for epoch in range(10000):   # jedna epoka oznacza jedno przejscie przez caly zestaw treningowy
+for epoch in range(5000):   # jedna epoka oznacza jedno przejscie przez caly zestaw treningowy
     output = model(X_train) # przepuszczenie danych poprawnych przez model, w wyniku dostaje output czyli rekonstrukcje tych danych
     loss = criterion(output, X_train) # obliczam błąd, miedyz tym co moedel przewidzial a tym co powinien przewidziec, za pomoca średniej kwadratowej
     optimizer.zero_grad() # zeruje gradienty, aby nie dodawaly sie do siebie
@@ -100,6 +100,13 @@ anomalies = np.where(reconstruction_error > (np.mean(reconstruction_error) + 2*n
 # np.std(reconstruction_error), odchylenie standardowe błędu rekonstrukcji dla wszystkich próbek
 
 print(anomalies)
+
+for i in anomalies:
+    print(f"Anomalous sample {i}: y_noisy[{i}:{i+20}]")
+    
+for a in anomalies:
+    idx_range = range(a, a + 20)
+    print(f"Anomaly detected in points: {list(idx_range)}")
 
 # błąd rekonstrukcji jest niski dla danych które są podobne do danych treningowych, a wysoki dla anomalii
 # czyli za pomocą średniej i odchylenia standardowego ustalam powyżej którego dane uznawane są za anomalie
