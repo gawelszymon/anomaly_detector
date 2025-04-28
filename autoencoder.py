@@ -61,35 +61,57 @@ class AnomalyAutoencoder(nn.Module):    #klasa dziedziczaca po nn.Module jest mo
             nn.Linear(10, 20)
         )
         
-    def forward(self, x):
-        x = x.view(x.size(0), -1)
-        encoded = self.encoder(x)
-        decoded = self.decoder(encoded)
-        return decoded.view(x.size(0), 20, 1)
+    def forward(self, x):   # funkcja forward odpowiada za przepłwy, przepuszczenie danych przez siec
+        x = x.view(x.size(0), -1) # usuwamy wydmiar, aby linear mogło prztworzyć dane
+        encoded = self.encoder(x) # komperesujemy dane do 4 wartośći
+        decoded = self.decoder(encoded) # odtwarzamy pierwotne dane z skompresowanej postaci
+        return decoded.view(x.size(0), 20, 1) # dodajemy wymiar, zeby wyjscie wygladało tak jak wejście
 
 model = AnomalyAutoencoder()
-criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+criterion = nn.MSELoss() # funkcja straty, średni błąd kwadratowy, mierzy jak bardzo wyjście modelu różni się od prawdziwych danych (oceniamy jak dobrze model działa)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001) # optymalizator Adam, który aktualizuje wagi modelu na podstawie błędu
+# model.parameters() - bierze wszystkie parametry modelu, które będą aktualizowane przez optymalizator
+# lr - learning rate, mówi jak dużym krokiem będziemy aktualizować wagi modelu, czyli definiuje jak bardzo model ma zmieniac swoje parametry po kazydym korku nauki, 
+# czyli w naszym przypadku każdej interacji.
 
-for epoch in range(1000):
-    output = model(X_train)
-    loss = criterion(output, X_train)
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
+
+# aktualizowana wparametry to wagi i biasy
+# wagi to liczby mówiące jak mocno dane wejście wpływa na inny wynik
+# biady to przesunięcia dodane do wyniku
+# parametr = wagi + biasy
+# wagi i biasy rozróżnia się dla każdego wejścia, modyfikuje je się w celu minimalizacji błędu reprezentowanego przez funkcję straty
+
+for epoch in range(10000):   # jedna epoka oznacza jedno przejscie przez caly zestaw treningowy
+    output = model(X_train) # przepuszczenie danych poprawnych przez model, w wyniku dostaje output czyli rekonstrukcje tych danych
+    loss = criterion(output, X_train) # obliczam błąd, miedyz tym co moedel przewidzial a tym co powinien przewidziec, za pomoca średniej kwadratowej
+    optimizer.zero_grad() # zeruje gradienty, aby nie dodawaly sie do siebie
+    loss.backward() # dostosowanie wag i biasów (gradientów) na podstawie błędu, pytorch robie to automatycznie
+    optimizer.step() # aktualizujemy wagi i biasy w naszym modelu, tak aby loss (błąd) był mniejszy
     if epoch % 10 == 0:
-        print(f"Epoch {epoch} Loss {loss.item():.4f}")
+        print(f"Epoch {epoch}, loss {loss.item():.4f}")
         
-with torch.no_grad():
+with torch.no_grad():  # wyłączamy gradienty, bo nie trenujemy modelu zbiorem testowym
     reconstructed = model(X_test)
-    reconstruction_error = torch.mean((X_test - reconstructed)**2, dim=[1, 2]).numpy()
+    reconstruction_error = torch.mean((X_test - reconstructed)**2, dim=[1, 2]).numpy() # wektor zawierajacy blad rekonsttrukcji dla kazdej próbki danych testowych
+    # oblciczamy średni błąd kwadratowy pomiedyz danymi orginalnymi a tymi odtworzonymi przez model
 
-anomalies = np.where(reconstruction_error > (np.mean(reconstruction_error) + np.std(reconstruction_error)))[0]
+anomalies = np.where(reconstruction_error > (np.mean(reconstruction_error) + 2*np.std(reconstruction_error)))[0]
+# np.mean(reconstruction_error), średnia wartość błędu rekonstrukcji dla wszystkich próbek
+# np.std(reconstruction_error), odchylenie standardowe błędu rekonstrukcji dla wszystkich próbek
+
 print(anomalies)
 
-# plt.figure(figsize=(10, 4))
-# plt.plot(reconstruction_error, label='Reconstruction Error')
-# plt.axhline(y=np.mean(reconstruction_error) + np.std(reconstruction_error), color='r', linestyle='--', label='Anomaly Threshold')
-# plt.title("Anomaly Detection using Autoencoder")
-# plt.legend()
-# plt.show()
+# błąd rekonstrukcji jest niski dla danych które są podobne do danych treningowych, a wysoki dla anomalii
+# czyli za pomocą średniej i odchylenia standardowego ustalam powyżej którego dane uznawane są za anomalie
+
+# średnia wartość błędu rekonstrukcji mówi jak dobrze model radzi sobie z odtwarzeniem danych
+# odchylenie standardowe błędu rekonstrukcji mówi jak bardzo błedy zróżnicowane są w całym zbiorze danych
+# czyli jesli błąd rekonstrukcji konkretnej próbki jest większy od średniej błędu rekonstrukcji + 2*odchylenie standardowe błędu rekonstrukcji to tą próbkę traktuję jako anomalie
+# dlatego nasz model jako traktuję argumenty, które należą do próbek z anomalią.
+
+
+# czyli jeśli mam dane zgodne z normalnym wzorcem, autoencoder poradzi sobie z ich rekonstrukcją i błąd bedzie mały/znikomy,
+# jeśli wprowadzone dane są nietypowe, model nie bedzie w stanie ich dobrze odtaworzyc, bład bedize duzy
+# następnie średnią wartość błedu rekonsttukcji dla calego zbioru danych  porównuje z błędem rekonstrukcji dla konkretnej próbki,
+# jeśli błąd rekosntrukcji dla konkrentej próbki jest wiekszy od sredniej wartosrci błedu rekonstrukcji + 2*odchylenie standardowe błedu rekonstrukcji
+# to traktuje ja jako anomalię
