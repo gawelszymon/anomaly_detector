@@ -1,0 +1,34 @@
+#TODO
+# cicha anomalia
+# metryka
+
+types of anomalis:
+- point anomaly - data point that deviate significantly from the rest of the data
+- contextual anomaly - depends on the surroundings contex, specially in  a time-series data.
+- collective anomalies - a set of data points together indicate an anomaly, a few factor might means anomaly
+
+Outliers - values that deviate significantly from the rest of the data.
+
+
+
+
+
+Conclusions after silent anomalies researches:
+In general model works properly when the outlies is much different than the original function.
+So if we wanna detect even silents anomalies we have to use some enhancement
+
+1. first of all we can apply dedicated detection for different anomaly types -
+different for common reconstruction error, diffrent for frequency, phase, amplitude and so on
+
+2. We can implement some function that can isolate some significant features in a purpose for
+detection different anomalies types.
+    - For TIME DOMAIN (point anomaly): Except for raw values we can use the derivatives to show
+                       how function is changing
+    - For FREQUENCY DOMAIN: magnitude of frequency components via Fast Fourier Transform
+    - For PHASE: phase angles of frequency components
+    - For AMPLITUDE (atenuation/noise): similar to time domain but we can implement amplitude envelope (obwiednia)
+      or hilbert transformation
+
+
+Current Challange: Metrics and implementation with explanation
+    
