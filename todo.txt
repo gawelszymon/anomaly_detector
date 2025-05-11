@@ -31,4 +31,9 @@ detection different anomalies types.
 
 
 Current Challange: Metrics and implementation with explanation
-    
+
+#TODO
+- na mszynie wirtualnej ogarnac
+- dokumentacja
+- dostane sql, z sql loader
+- analizwoanie anomali w zaleznosci od czasu
