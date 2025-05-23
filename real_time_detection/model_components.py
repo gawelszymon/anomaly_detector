@@ -173,15 +173,38 @@ class AnomalyScorer:
         return is_anomaly, amp_ratio, z_score
     
     def evaluate_segment(self, noisy_segment_ae_features_scaled, reconstructed_segment_ae_features_scaled, clean_segment_raw_features, noisy_segment_raw_features):
-        result = {}
+        results = {}
         is_any_anomaly = False
         
         is_re_anomaly, re_score, re_z = self.check_reconstruction_error(noisy_segment_ae_features_scaled, reconstructed_segment_ae_features_scaled)
-        result['reconstruction_error'] = {
+        results['reconstruction_error'] = {
             'is_anomaly': is_re_anomaly,
             'score': re_score,
             'z_score': re_z
         }
-        
         if is_re_anomaly:
             is_any_anomaly = True
+            
+        is_fd_anomaly, fd_score, fd_z = self.check_frequency_deviation(clean_segment_raw_features, noisy_segment_raw_features)
+        results['frequency_deviation'] = {
+            'is_anomaly': is_fd_anomaly, 'score': fd_score, 'z_score': fd_z
+        }
+        if is_fd_anomaly:
+            is_any_anomaly = True
+            
+        is_pd_anomaly, pd_score, pd_z = self.check_phase_deviation(clean_segment_raw_features, noisy_segment_raw_features)
+        results['phase_deviation'] = {
+            'is_anomaly': is_pd_anomaly, 'score': pd_score, 'z_score': pd_z
+        }
+        if is_pd_anomaly:
+            is_any_anomaly = True
+            
+        is_ar_anomaly, ar_score, ar_z = self.check_amplitude_deviation(clean_segment_raw_features, noisy_segment_raw_features)
+        results['amplitude_deviation'] = {
+            'is_anomaly': is_ar_anomaly, 'score': ar_score, 'z_score': ar_z
+        }
+        if is_ar_anomaly:
+            is_any_anomaly = True
+            
+        results['is_any_anomaly'] = is_any_anomaly
+        return results
