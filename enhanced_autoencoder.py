@@ -256,21 +256,24 @@ class AnomalyDetectorEnsemble:
             'amplitude_ratio': amp_ratio
         }
 
-# Main execution
 def main():
-    # Extract enhanced features with overlap
-    seq_len = 20
+    
+    # prepare data for the autoencoder
+    seq_len = 20    #sample quantity - the data length of the segment
+    # X_test_features - the features of the noisy signal (vector of the features)
+    # train_scalar = the object StandardScaler to normalize the data (remember the mean and std of the training data)
+    # train_indices - the beginning index of each segment, to map on the orignal signal
     X_train_features, train_scaler, train_indices = extract_advanced_features(y_clean, seq_len, overlap=0.75)
     X_test_features, _, test_indices = extract_advanced_features(y_noisy, seq_len, overlap=0.75)
     
-    # Apply training scaler to test features
+    # apply training scaler to test features (normalize the test data to the same scale as training data)
     X_test_features = train_scaler.transform(X_test_features)
     
-    # Prepare tensors
+    # Prepare tensors to use in pytorch
     X_train = torch.tensor(X_train_features, dtype=torch.float32)
     X_test = torch.tensor(X_test_features, dtype=torch.float32)
     
-    # Create and train model
+    # train the model
     input_size = X_train.shape[1]
     model = AdvancedAutoencoder(input_size)
     
@@ -283,15 +286,16 @@ def main():
     best_loss = float('inf')
     patience_counter = 0
     
+    # the regural training loop
     for epoch in range(epochs):
-        # Forward pass
+        # the model is in training mode it takes input and learn the features returning the output
         output = model(X_train)
-        loss = criterion(output, X_train)
+        loss = criterion(output, X_train)   # it computes the loss between the orginal and the reconstructed signal
         
-        # Backward pass with gradient clipping
+        # Backward pass with gradient clipping, it updates the weights of the model
         optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0) # gradient clipping, close the gradient to 1.0
         optimizer.step()
         
         if epoch % 100 == 0:
