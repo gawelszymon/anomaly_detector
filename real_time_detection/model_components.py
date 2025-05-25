@@ -107,21 +107,23 @@ class AdvancedAutoencoder(nn.Module):
         hidden_size = 64
         bottleneck_size = 16
         
+        # enhanced encoder takes input and compresses it into a lower-dimensional representation (latent vector)
         self.encoder = nn.Sequential(
             nn.Linear(input_size, hidden_size),
-            nn.LeakyReLU(),
-            nn.Dropout(0.2),
+            nn.LeakyReLU(0.2),  # it does not cut the negative values, it is not so strong as ReLU
+            nn.Dropout(0.2),  # Prevent overfitting by randomly setting some neurons to 0
             nn.Linear(hidden_size, hidden_size // 2),
-            nn.LeakyReLU(),
+            nn.LeakyReLU(0.2),
             nn.Dropout(0.2),
             nn.Linear(hidden_size // 2, bottleneck_size)
         )
         
+        # enhanced decoder takes the latent vector and reconstructs the original input
         self.decoder = nn.Sequential(
             nn.Linear(bottleneck_size, hidden_size // 2),
-            nn.LeakyReLU(),
+            nn.LeakyReLU(0.2),
             nn.Linear(hidden_size // 2, hidden_size),
-            nn.LeakyReLU(),
+            nn.LeakyReLU(0.2),
             nn.Linear(hidden_size, input_size)
         )
         
