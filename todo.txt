@@ -87,16 +87,17 @@ pula użytkowników 100 000
 
 | Godziny       | CPU (%) | Users        | Uwagi                                                   |
 | ------------- | ------- | ------------ | ------------------------------------------------------- |
-| 00:00 - 01:00 | 11 – 20 | 1500 – 4000  | spokojne godziny nocne                                  |
-| 01:00 - 05:00 | 5 – 13  | 0 – 1500     | niska aktywność                                         |
-| 06:00 - 08:00 | 17 – 30 | 4000 – 6000  | początek dnia, poranne logowania                        |
+| 00:00 - 04:00 | 5 – 13  | 0 – 1500     | spokojne godziny nocne                                  |
+| 04:00 - 06:00 | 5 – 15  | 0 – 2000     | niska aktywność                                         |
+| 06:00 - 08:00 | 17 – 30 | 3000 – 6000  | początek dnia, poranne logowania                        |
 | 08:00 - 10:00 | 25 – 40 | 5000 – 9000  | poranny szczyt                                          |
-| 10:00 - 13:00 | 35 – 55 | 7000 – 11000 | godziny pracy, spore obciążenie                         |
-| 13:00 - 16:00 | 30 – 50 | 6000 – 10000 | kontynuacja aktywności, nieco stabilniej                |
-| 16:00 - 18:00 | 40 – 65 | 8000 – 12000 | popołudniowy szczyt (dużo użytkowników, końcówka pracy) |
-| 18:00 - 20:00 | 35 – 50 | 6000 – 9000  | wieczorna aktywność, np. logowania domowe               |
-| 20:00 - 22:00 | 20 – 35 | 3000 – 7000  | schyłek dnia                                            |
-| 22:00 - 00:00 | 10 – 25 | 1000 – 4000  | powolne wygaszanie aktywności                           |
+| 10:00 - 12:00 | 35 – 55 | 7000 – 11000 | godziny pracy, spore obciążenie                         |
+| 12:00 - 14:00 | 30 – 50 | 6000 – 10000 | kontynuacja aktywności, nieco stabilniej                |
+| 14:00 - 16:00 | 40 – 60 | 8000 – 12000 | popołudniowy szczyt (dużo użytkowników, końcówka pracy) |
+| 16:00 - 18:00 | 30 – 45 | 6000 – 9000  | popołudniowy odpoczynek (niższa aktywność)              |
+| 18:00 - 20:00 | 20 – 35 | 3000 – 7000  | wieczorna aktywność, np. logowania domowe               |
+| 20:00 - 22:00 | 15 – 25 | 2000 – 4000  | schyłek dnia                                            |
+| 22:00 - 24:00 | 10 – 17 | 1000 – 3000  | powolne wygaszanie aktywności                           |
 
 
 teraz chce wygnerowac po 2500 przykładów na kazdy z 10 bloków godzinowych
