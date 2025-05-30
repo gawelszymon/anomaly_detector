@@ -1,91 +1,73 @@
-# Time Series Anomaly Detection with Advanced Autoencoders
+# Time series anomaly detection with advanced autoencoders
 
-This project demonstrates a system designed to automatically detect unusual patterns or "anomalies" in time-series data, specifically using the `abs(sin)` function as an example, mocked data. It covers a machine learning technique called Autoencoders, combined with multiple specialized detectors to find various types of abnormal behaviors in a signal.
+This project demonstrates a system designed to automatically detect unusual patterns known as anomalies in time-series data, specifically using the `abs(sin)` function as an example, mocked data. It covers a machine learning technique called Autoencoders, combined with multiple specialized detectors to find various types of abnormal behaviors in a signal.
 
-## 1. What is Anomaly Detection?
+## 1. What is anomaly detection?
 
-You have a sensor to get some data. Most of the time, the data follows a predictable pattern – this is normal, usual behavior. Anomaly detection is the process of finding data points or patterns that are significantly different from this normal behavior. We're looking for different kinds of "weird" behaviors in our `abs(sin)` signal, like sudden jumps, changes in its rhythm, or changes in its strength.
+You have a sensor to get some data. Most of the time, the data follows a predictable pattern – this is normal, usual behavior. Anomaly detection is the process of finding data points or patterns that are significantly different from this normal behavior. We're looking for various kinds of weird behaviors in our `abs(sin)` signal, like sudden jumps, changes in its rhythm, or changes in its strength of the signal.
 
-### Why "Unsupervised" Anomaly Detection?
+### Why do we use unsupervised anomaly detection?
 
 We only have examples of normal, healthy behavior. Unsupervised anomaly detection means our system learns what normal looks like, and then anything that deviates significantly from this learned normal is flagged as an anomaly. So we don't need to use any label, because the entire training set is known as a correct one.
 
-### How Autoencoders Help (The Core Idea)
+### The core ideas of an autoencoder.
 
-An **Autoencoder** is a special type of neural network. Think of it like a smart "compressor and decompressor" for data:
+An autoencoder is a special type of neural network. It works like a compressor and decompressor for data:
 
-1.  **Compression (Encoder)**: It takes an input (e.g., a piece of your signal) and learns to compress it into a much smaller, concise representation (like making a big photo into a tiny thumbnail).
-2.  **Decompression (Decoder)**: It then takes this tiny compressed version and tries to decompress it back into something that looks exactly like the original input.
-
-**The Clever Part for Anomaly Detection**:
-
-*   **Training on Normal Data**: We train the Autoencoder *only* on perfectly "normal" data. It becomes very good at compressing and decompressing normal patterns.
-*   **Detecting Anomalies**: When we give the trained Autoencoder a *new* piece of data:
+1.  Compression - Encoder: It takes an input (a piece of the signal) and learns to compress it into a much smaller, concise representation (like making a big photo into a tiny and poor pixel representation).
+2.  Decompression - Decoder: It then takes this tiny compressed version and tries to decompress it back into something that looks exactly like the original input. So it has to know how to capture it, and can detect some deviations, comparing the recreated signal with the original one.
+3. Training on Normal Data: The Autoencoder is trained only on perfect, usual data, it becomes very good at compressing and decompressing normal patterns.
+4. Detecting Anomalies - we give the trained Autoencoder a new piece of data:
     *   If the new data is "normal," the Autoencoder will reconstruct it almost perfectly (low error).
-    *   If the new data is "anomalous" (something the Autoencoder has never seen during training), it will struggle to reconstruct it accurately. The difference between the original anomalous input and the Autoencoder's reconstructed output will be very large.
-
-This "reconstruction error" becomes our main indicator of an anomaly. A high error means "this looks strange!"
+    *   If the new data is "anomalous" (something the Autoencoder has never seen during training), it will struggle to reconstruct it accurately. The difference between the original anomalous input and the Autoencoder's reconstructed output will be very large, so we can mark that part of the signal as an anomalous one.
+5.  Reconstruction error is our main indicator of an anomaly. A high error means an anomaly.
 
 ## 2. Project Concept
 
-Our project takes the `abs(sin)` function data and applies a sophisticated, multi-stage approach to find anomalies:
+Our project takes the abs(sin) function data and applies a sophisticated, multi-stage approach to find anomalies:
 
-1.  **Smart Data Preparation (Feature Extraction)**: Instead of just looking at the raw signal points, we first divide the signal into small, overlapping chunks (called "segments"). For each segment, we extract a rich set of "features" or characteristics. These features describe various aspects of the segment, like its overall shape, its rhythm (frequency), its starting point (phase), and its strength (amplitude). This gives the Autoencoder much more information to work with.
+1.  Data Preparation (Feature Extraction): We first divide the signal into small, overlapping chunks (segments). For each segment, we extract a rich set of features, that precisely describes the signal, like its overall shape, frequency, phase, and amplitude. This gives the Autoencoder much more information to work with, so the detection is more accurate.
 
-2.  **Learning "Normal" (Autoencoder Training)**:
-    *   We take a perfectly clean, normal `abs(sin)` signal.
-    *   We extract the advanced features from *only* this normal signal.
-    *   We then train our `AdvancedAutoencoder` model using these normal features. The Autoencoder learns the typical relationships and patterns within these features. It learns to compress and decompress them perfectly when they are "normal."
+2.  The autoencoder pipeline is taking a perfectly clean, normal abs(sin) signal, extracting the advanced features from only this normal signal, training our AdvancedAutoencoder model using these normal features. So the output of that process is the autoencoder learned the typical relationships and patterns within these features. It learns to compress and decompress them perfectly when they are normal.
 
-3.  **Finding the "Strange" (Anomaly Detection with Ensemble)**:
-    *   When we receive a new signal that might contain anomalies, we apply the *exact same* feature extraction process to it.
-    *   We feed these new features into our *already trained* `AdvancedAutoencoder`.
-    *   The Autoencoder tries to reconstruct the features. If it reconstructs them poorly, it's a sign of an anomaly.
-    *   **Ensemble Detection**: To make our detection even more robust and capable of catching different *types* of anomalies, we don't just rely on the Autoencoder's reconstruction error. We use an "ensemble" of detectors:
-        *   One detector checks the overall reconstruction error.
-        *   Other specialized detectors look for specific changes in frequency, phase, or amplitude by comparing the noisy signal segments to what a clean segment would look like.
-    *   If *any* of these detectors flags a segment as suspicious, we consider that segment and the corresponding part of the original signal to contain an anomaly.
-
-This combined approach allows our system to be sensitive to a wide range of unusual patterns in the signal.
+3.  Anomaly Detection with Ensemble - we receive a new signal that might contain anomalies, we apply the exact same feature extraction process to it. We feed these new features into our already trained AdvancedAutoencoder, it tries to reconstruct the features. If the reconstruction goes poorly, it's a sign of an anomaly. To make our detection even more capable of catching different types of anomalies, we don't just rely on the Autoencoder's reconstruction error. We use an ensemble of detectors (one detector checks the overall reconstruction error, other specialized detectors look for specific changes in frequency, phase, or amplitude by comparing the noisy signal segments to what a clean segment would look like, if any of these detectors flags a segment as suspicious, we consider that segment to contain an anomaly). This approach allows our system to be sensitive to a wide range of unusual patterns in the signal.
 
 ## 3. File-by-File Breakdown
 
-Let's dive into the details of each Python file in the project.
+### detection_components.py
 
-### `detection_components.py`
+Blocks and logic for our anomaly detection system.
 
-This file contains the core building blocks for our anomaly detection system: the feature extraction logic, the Autoencoder neural network, and the multi-detector ensemble.
+#### extract_advanced_features(data, seq_len=20, overlap=0.5) function
 
-#### `extract_advanced_features(data, seq_len=20, overlap=0.5)` function
-
-*   **Purpose**: This is a crucial function that takes a raw time-series signal (`data`) and transforms it into a set of informative "features" for each small piece of the signal. These features help the Autoencoder understand the signal's characteristics much better than just looking at raw values.
+*   Purpose: It takes a raw time-series signal and transforms it into a set of informative features for each small piece of the signal. The autoencoder understand the signal characteristic much better, as it is explained above.
 *   **How it works**:
-    1.  **Segmenting the Data**: It breaks the long `data` signal into smaller, overlapping `segments` (each `seq_len` samples long, e.g., 20 samples). `overlap` ensures that we don't miss anomalies that might fall on segment boundaries.
-    2.  **Calculating Features for Each Segment**: For each segment, it calculates a wide variety of characteristics:
+    1.  Segmenting the Data: It breaks the long data into smaller, overlapping segments (seq_len samples long, 20 samples). Overlap ensures that we don't miss anomalies that might fall on segment boundaries.
+    2.  Calculating Features for Each Segment - a wide variety of characteristics:
         *   **Time Domain Features**:
-            *   `segment`: The raw signal values in the segment.
-            *   `first_derivative`: How much the signal changes from one point to the next. Helps detect sudden spikes or drops.
-            *   `second_derivative`: How quickly the change itself is changing (acceleration). Helps detect sharp turns or rapid changes.
-        *   **Frequency Domain Features (using Fast Fourier Transform - FFT)**:
-            *   `fft_values`: Shows which frequencies are present in the segment and how strong they are.
-            *   `dominant_freq`, `dominant_magnitude`: The most prominent frequency and its strength. Helps identify changes in the signal's rhythm.
-            *   `freq_spread`: How spread out the energy is across different frequencies. A high spread can indicate a noisy or changing frequency pattern.
-            *   `spectral_centroid`: The "center of mass" of the frequencies. A shift here indicates a change in the dominant frequency components.
+            *   segment: The raw signal values.
+            *   first_derivative: How much the signal changes from one point to the next. Helps detect sudden spikes or drops.
+            *   second_derivative: How quickly the change itself is changing (acceleration). Helps detect sharp turns or rapid changes.
+        *   **Frequency Domain Features (Fourier Transform - FFT)**:
+            *   fft_values: Shows which frequencies are present in the segment and how strong they are.
+            *   dominant_freq, dominant_magnitude: Helps identify changes in the signal's rhythm.
+            *   freq_spread: A high spread can indicate a noisy or changing frequency pattern.
+            *   spectral_centroid: A shift here indicates a change in the dominant frequency components.
         *   **Phase Features**:
-            *   `fft_phase`: The "starting point" or alignment of different frequency components.
-            *   `phase_mean`, `phase_std`: Average phase and how much it varies. Helps detect `phase shifts` (where the signal is shifted horizontally).
-        *   **Amplitude Features (using Hilbert Transform)**:
-            *   `amplitude_envelope`: The "outline" or overall strength of the signal over time.
-            *   `envelope_mean`, `envelope_std`: Average and variability of the signal's strength. Helps detect `attenuator` anomalies (where the signal becomes much weaker).
+            *   fft_phase: The starting point or alignment of different frequency components.
+            *   phase_mean, phase_std: Average phase and how much it varies.
+        *   **Amplitude Features (Hilbert Transform)**:
+            *   amplitude_envelope: The outline or overall strength of the signal over time.
+            *   envelope_mean, envelope_std: Helps detect attenuator anomalies (where the signal becomes much weaker).
         *   **Statistical Features**:
-            *   `mean`: The average value of the segment.
-            *   `std`: Standard deviation, showing how much the values in the segment vary. High `std` means a lot of change.
-            *   `skew`: Measures the asymmetry of the segment's distribution.
-            *   `kurtosis`: Measures the "tailedness" of the distribution; high kurtosis can indicate more extreme values or outliers.
+            *   mean: The average value of the segment.
+            *   std: Standard deviation, showing how much the values in the segment vary. High std means a lot of change.
+            *   skew: Measures the asymmetry of the segment's distribution.
+            *   kurtosis: High kurtosis can indicate more extreme values or outliers.
         *   **Wavelet Features**:
-            *   `smoothed`: A smoothed version of the signal, removing sharp details.
-            *   `detail`: The difference between the original and smoothed signal, highlighting sharp changes and anomalies.
-            *   `detail_energy`: The strength of these sharp details.
+            *   smoothed: A smoothed version of the signal, removing sharp details.
+            *   detail: The difference between the original and smoothed signal, highlighting sharp changes and anomalies.
+            *   detail_energy: The strength of these sharp details.
     3.  **Combining and Normalizing**: All these individual features for a segment are combined into one long "feature vector." Finally, these feature vectors are `normalized` using `StandardScaler`. This makes sure all features have a similar scale (e.g., mean of 0, standard deviation of 1), which is important for the Autoencoder to learn effectively.
 *   **Output**: Returns the normalized feature vectors, the `StandardScaler` object (which remembers how the data was scaled), and the starting index (`indices`) of each segment in the original signal.
 
