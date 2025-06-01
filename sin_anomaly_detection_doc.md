@@ -68,101 +68,98 @@ Blocks and logic for our anomaly detection system.
             *   smoothed: A smoothed version of the signal, removing sharp details.
             *   detail: The difference between the original and smoothed signal, highlighting sharp changes and anomalies.
             *   detail_energy: The strength of these sharp details.
-    3.  **Combining and Normalizing**: All these individual features for a segment are combined into one long "feature vector." Finally, these feature vectors are `normalized` using `StandardScaler`. This makes sure all features have a similar scale (e.g., mean of 0, standard deviation of 1), which is important for the Autoencoder to learn effectively.
-*   **Output**: Returns the normalized feature vectors, the `StandardScaler` object (which remembers how the data was scaled), and the starting index (`indices`) of each segment in the original signal.
+    3.  Combining and Normalizing: All these individual features for a segment are combined into one long feature vector. Vectors are normalized using StandardScaler. This makes sure all features have a similar scale, which is important for the Autoencoder to learn effectively.
+So output returns the normalized feature vectors, and the starting index of each segment in the original signal.
 
-#### `AdvancedAutoencoder(nn.Module)` class
+#### class AdvancedAutoencoder(nn.Module)
 
-*   **Purpose**: This class defines the structure of our Autoencoder neural network, which is designed to learn and reconstruct the "normal" patterns of our advanced features.
-*   **`__init__(self, input_size)` method**:
-    *   This is where the Autoencoder's "architecture" (its layers and connections) is set up.
-    *   It has an `encoder` part and a `decoder` part.
-    *   **`encoder`**: This part compresses the input features. It takes the `input_size` (the length of our feature vector) and reduces it down to a `bottleneck_size` (e.g., 16).
-        *   It uses `nn.Linear` layers for computations.
-        *   `LeakyReLU(0.2)`: An "activation function" that helps the network learn complex, non-linear relationships. It's a slightly "softer" version of `ReLU`.
-        *   `Dropout(0.2)`: This is a technique to prevent "overfitting" (where the model memorizes the training data too well and performs poorly on new data). During training, it randomly turns off 20% of the neurons, forcing the network to learn more robust and general patterns.
-    *   **`decoder`**: This part takes the compressed information from the `bottleneck_size` and tries to expand it back to the original `input_size`. It uses similar `nn.Linear` and `LeakyReLU` layers.
-*   **`forward(self, x)` method**:
-    *   This method defines the "flow" of data through the Autoencoder. When you give the Autoencoder an input `x`, it first passes `x` through the `encoder` to get a compressed representation, and then passes this compressed representation through the `decoder` to get the reconstructed output.
+*   Purpose: This class defines the structure of our Autoencoder neural network, to learn and reconstruct the normal patterns.
+*   **__init__(self, input_size) method**:
+    *   The layers and connections to set up the Autoencoder.
+    *   Contains encoder and a decoder part.
+    *   **encoder compresses the input features. It takes the input_size, that is the length of our feature vector and reduces it down to a bottleneck_size.
+        *   It uses nn.Linear layers for computations.
+        *   LeakyReLU(0.2): An activation function that helps the network learn complex, non-linear relationships. The alternative, softer version of ReLu.
+        *   Dropout(0.2): This is a technique to prevent overfitting (overfitting is the negative behaviour, model memorizes the training data too well and performs poorly on new data). During training, it randomly turns off 20% of the neurons, forcing the network to learn more robust and general patterns.
+    *   **decoder**: This part takes the compressed information from the bottleneck_size and tries to expand it back to the original input_size.
+*   **forward(self, x) method**:
+    *   Defines the flow of data through the Autoencoder. First an input, then encoder - to get a compressed representation, then decoder - to get the reconstructed output.
 
-#### `AnomalyDetectorEnsemble` class
+#### class AnomalyDetectorEnsemble
 
-*   **Purpose**: This class brings together multiple anomaly detection strategies. Instead of relying on just one way to spot anomalies, it uses several "detectors" in combination. This makes the system more robust and capable of finding different *types* of anomalies that a single detector might miss.
-*   **`__init__(self, X_test, reconstructed, test_indices, seq_len)` method**:
-    *   Initializes the ensemble with the original features (`X_test`), the features reconstructed by the Autoencoder (`reconstructed`), the starting indices of the segments, and the segment length. It also creates a `set()` called `anomalies` to store unique indices of detected anomalies.
-*   **`reconstruction_error_detector(self, sensitivity=2.5)` method**:
-    *   **Purpose**: This is the primary detection method based on the Autoencoder's performance.
-    *   **How it works**: It calculates the "Mean Squared Error" (`mse`) between the original features (`X_test`) and the `reconstructed` features. A higher `mse` means the Autoencoder struggled more, indicating a potential anomaly. It converts these errors into "Z-scores" (how many standard deviations away from the average error) and flags segments where the Z-score exceeds a `sensitivity` threshold (e.g., 2.5 means 2.5 standard deviations above average).
-*   **`frequency_detector(self, y_clean, y_noisy, window_size=20, sensitivity=3.0)` method**:
-    *   **Purpose**: Specifically designed to catch anomalies where the signal's *frequency* pattern changes (e.g., `3x frequency` anomaly).
-    *   **How it works**: It extracts dominant frequencies from both the `clean` reference signal and the `noisy` signal in small windows. If the frequency of a noisy segment is significantly different from its clean counterpart, it's flagged as a frequency anomaly.
-*   **`phase_detector(self, y_clean, y_noisy, window_size=20, sensitivity=2.0)` method**:
-    *   **Purpose**: Aims to detect `phase shift` anomalies, where the signal is shifted horizontally compared to its normal pattern.
-    *   **How it works**: It calculates and compares the phase information (using Hilbert transform) of segments from the `clean` signal and the `noisy` signal. A large difference suggests a phase anomaly.
-*   **`amplitude_detector(self, y_clean, y_noisy, window_size=20, sensitivity=2.0)` method**:
-    *   **Purpose**: Catches anomalies related to changes in the signal's *amplitude* or overall strength (e.g., `attenuator` anomaly).
-    *   **How it works**: It compares the `std` (standard deviation, indicating variability) or amplitude envelope of segments from the `clean` signal and the `noisy` signal. A significant change in amplitude characteristics flags an anomaly.
-*   **`run_all_detectors(self, y_clean, y_noisy)` method**:
-    *   **Purpose**: Executes all the individual detection methods (`reconstruction_error_detector`, `frequency_detector`, `phase_detector`, `amplitude_detector`).
-    *   **Combining Results**: It collects all the anomaly indices found by any of the detectors into a single set, ensuring that each anomaly is counted only once.
-    *   **Output**: Returns a list of unique segment indices identified as anomalous, along with the raw metrics (errors, differences, ratios) from each detector for further analysis.
+*   **Purpose**: Bringing together multiple anomaly detection strategies by its combination, so the system is able to detect more precisely different type of anomalies also the silient ones.
+*   **__init__(self, X_test, reconstructed, test_indices, seq_len) method**:
+    *   Initializes the ensemble with the original features, the features reconstructed by the Autoencoder, the starting indices of the segments, and the segment length. The set() called anomalies to store unique indices of detected anomalies.
+*   **reconstruction_error_detector(self, sensitivity=2.5) method**:
+    *   **Purpose**: The primary detection method based on the Autoencoder's performance. It calculates the Mean Squared Error (mse) between the original features and the reconstructed ones. A higher mse means the Autoencoder struggled more, indicating a potential anomaly. It converts these errors into Z-scores (how many standard deviations away from the average error) and flags segments where the Z-score exceeds a sensitivity threshold (2.5 is from 2.5 standard deviations above average).
+*   **frequency_detector(self, y_clean, y_noisy, window_size=20, sensitivity=3.0) method**:
+    *   **Purpose**: Catching anomalies where the signal's frequency pattern changes.
+    *   It extracts dominant frequencies from both the clean reference signal and the noisy signal in small windows. If the frequency of a noisy segment is much different from its clean, it's flagged as a frequency anomaly.
+*   **phase_detector(self, y_clean, y_noisy, window_size=20, sensitivity=2.0) method**:
+    *   **Purpose**: Detecting phase shift anomalies, where the signal is shifted horizontally compared to its normal pattern.
+    *   It calculates and compares the phase information (using Hilbert transform) of segments from the clean signal and the nois signal. A large difference - phase anomaly.
+*   **amplitude_detector(self, y_clean, y_noisy, window_size=20, sensitivity=2.0) method**:
+    *   **Purpose**: detect anomalies related to changes in the amplitude or strength (like attenuator anomaly).
+    *   It compares the std - standard deviation, indicating variability) or amplitude envelope of segments from the clean signal and the noisy signal. A significant change in amplitude characteristics flags an anomaly.
+*   **run_all_detectors(self, y_clean, y_noisy)**:
+    *   Purpose: Executes all the detection methods mentioned aboved.
+    *   It collects all the anomaly indices into a single set, ensuring that each anomaly is counted only once.
+    *   Returns a list of unique segment indices identified as anomalous, along with the raw metrics (errors, differences, ratios) from each detector for further analysis.
 
-### `train_autoencoder.py`
+### train_autoencoder.py
 
-This script is responsible for the crucial first step: teaching the `AdvancedAutoencoder` what "normal" data looks like.
+This script is responsible for teaching the AdvancedAutoencoder what normal data looks like.
 
-*   **`main()` function**:
-    1.  **Generate Clean Data**: It starts by creating a perfectly `y_clean` `abs(sin)` signal. This signal represents the "normal" behavior we want our Autoencoder to learn.
-    2.  **Prepare Training Features**: It calls `extract_advanced_features` (from `detection_components.py`) to process this `y_clean` signal into `X_train_features`. This ensures the Autoencoder learns from the same type of features it will see during detection.
-    3.  **Initialize Autoencoder**: An `AdvancedAutoencoder` model is created.
+*   **main() function**:
+    1.  **Generate Clean Data**: It starts by creating a perfectly y_clean abs(sin) signal. This signal represents the normal behavior we want our Autoencoder to learn.
+    2.  **Prepare Training Features**: calls extract_advanced_features to process y_clean signal into X_train_features, 
+ ensures the Autoencoder learns from the same type of features it will see during detection.
+    3.  **Initialize Autoencoder**: An AdvancedAutoencoder` model.
     4.  **Define Loss and Optimizer**:
-        *   `criterion = nn.MSELoss()`: This is the "loss function." It measures how different the Autoencoder's output is from the original input. The goal during training is to make this `loss` as small as possible.
-        *   `optimizer = torch.optim.Adam(...)`: This is the "optimizer." It's an algorithm that helps the Autoencoder adjust its internal settings (weights) based on the `loss` to improve its performance.
+        *   criterion = nn.MSELoss(): It measures how different the Autoencoder's output is from the original input. The goal during training is to make this loss as small as possible.
+        *   optimizer = torch.optim.Adam(...) It's an algorithm that helps the Autoencoder adjust its internal settings (weights) based on the loss to improve its performance.
     5.  **Training Loop**:
-        *   The code then enters a loop (`for epoch in range(epochs)`), where the Autoencoder repeatedly processes the `X_train` data.
-        *   In each `epoch`:
-            *   `output = model(X_train)`: The Autoencoder tries to reconstruct the input features.
-            *   `loss = criterion(output, X_train)`: The `loss` is calculated, telling us how well the reconstruction was.
-            *   `optimizer.zero_grad()`: Clears previous calculations.
-            *   `loss.backward()`: Calculates how much each weight in the network contributed to the `loss`.
-            *   `torch.nn.utils.clip_grad_norm_`: This is a safeguard that prevents extremely large weight updates, which can destabilize training.
-            *   `optimizer.step()`: The Autoencoder adjusts its weights to reduce the `loss`.
-        *   **Progress Monitoring**: Every 100 epochs, it prints the current `loss` to show training progress.
-        *   **Early Stopping**: If the `loss` becomes very small (less than `0.0001`), the training stops early, as the model has likely learned the normal patterns sufficiently well.
+        *   The code enters a loop (for epoch in range(epochs)), where the Autoencoder repeatedly processes the train data.
+        *   In each epoch:
+            *   output = model(X_train): The Autoencoder works and tries to reconstruct the input features.
+            *   loss = criterion(output, X_train): The loss is calculated, telling us how well the reconstruction was.
+            *   optimizer.zero_grad(): Clears previous calculations and gets ready for next ones.
+            *   loss.backward(): Calculates how much each weight in the network contributed to the loss.
+            *   torch.nn.utils.clip_grad_norm_: This is for the safe reasons that prevents extremely large weight updates, which can destabilize training.
+            *   optimizer.step(): The Autoencoder adjusts its weights to reduce the loss.
+        *   Every 100 epochs, it prints the current loss to show training progress.
+        *   If the loss becomes very small (less than 0.0001), the training stops early, as the model has likely learned the normal patterns.
     6.  **Save Trained Model**: After training, `torch.save(model.state_dict(), 'advanced_autoencoder.pth')` saves the learned knowledge of the Autoencoder into a file named `advanced_autoencoder.pth`. This file can then be loaded later for actual anomaly detection without needing to retrain the model.
 
-### `detection_autoencoder.py`
+### detection_autoencoder.py
 
-This script simulates the "real-time" anomaly detection process using the pre-trained Autoencoder model.
+Mechanizm for imitating real-time anomaly detection process using the pre-trained Autoencoder model.
 
 *   **Simulated Noisy Data**:
-    *   It first creates a `y_clean` `abs(sin)` signal, just like in training.
-    *   Then, it generates several `y_noisy` versions of this signal (`y_noisy`, `y_noisy1`, `y_noisy2`, `y_noisy3`). Each of these `y_noisy` signals has different *known* anomalies introduced at specific positions (e.g., common spikes, 3x frequency changes, phase shifts, amplitude changes). This allows us to test if our detection system can find them.
-    *   These noisy signals are collected in the `detector` list.
-*   **`real_time_anomaly_detection(y_detected)` function**:
-    *   **Purpose**: This function takes a single (potentially noisy) signal (`y_detected`) and runs the full anomaly detection pipeline on it.
-    *   **Prepare Features**: It calls `extract_advanced_features` to get the feature vectors for the `y_detected` signal.
-    *   **Load Pre-trained Model**: `model.load_state_dict(torch.load('advanced_autoencoder.pth'))` loads the Autoencoder's learned knowledge from the file saved by `train_autoencoder.py`.
-    *   `model.eval()`: This command tells the model to switch to "evaluation mode." In this mode, features like `Dropout` (which are only used during training) are turned off, ensuring consistent and predictable results.
-    *   **Reconstruct Features**: `with torch.no_grad(): reconstructed = model(X_test)` feeds the new features into the loaded Autoencoder. `torch.no_grad()` means we are not training the model, so we don't need to track information for updating weights, making the process faster.
-    *   **Run Ensemble Detectors**: It creates an `AnomalyDetectorEnsemble` object and calls its `run_all_detectors` method. This runs all the individual detectors (reconstruction error, frequency, phase, amplitude) on the `y_detected` signal, comparing it against the `y_clean` baseline where needed.
-    *   **Display Results**: It prints the starting and ending positions of the segments identified as anomalous by the ensemble.
-*   **`main()` function**:
-    *   This function iterates through each of the simulated `y_noisy` signals in the `detector` list.
-    *   For each noisy signal, it calls `real_time_anomaly_detection()` to perform the anomaly detection.
-    *   It prints separators (`---`) between the results for different noisy signals for clarity.
+    *   Firstly, creates a y_clean abs(sin) signal, for later added the anomalies.
+    *   Then, it generates several y_noisy versions of this signal. Each of these signals has different anomalies introduced at specific positions.
+    *   Noisy signals are collected in the detector list.
+*   **real_time_anomaly_detection(y_detected) function**:
+    *   **Purpose**: This function takes a single, potentially noisy signal and runs the full anomaly detection pipeline on it.
+    *   It calls extract_advanced_features to get the feature vectors for the y_detected signal.
+    *   model.load_state_dict(torch.load('advanced_autoencoder.pth')) loads the Autoencoder's learned knowledge from the file saved by train_autoencoder.py.
+    *   model.eval(): switches to evaluation mode - features like Dropout, which are only used during training are turned off, ensuring consistent and predictable results.
+    *   with torch.no_grad(): reconstructed = model(X_test)feeds the new features into the loaded Autoencoder. torch.no_grad() means we are not training the model, so we don't need to track information for updating weights, it makes the process faster.
+    *   Run Ensemble Detectors: It creates an AnomalyDetectorEnsemble object and calls its run_all_detectors method. This runs all the individual detectors (reconstruction error, frequency, phase, amplitude) on the y_detected signal, comparing it against the y_clean baseline where needed.
+    *   Display Results: It prints the starting and ending positions of the segments identified as anomalous by the ensemble.
+*   **main()**:
+    *   iterates through each of the y_noisy signals in the detector list.
+    *   For each noisy signal, it calls real_time_anomaly_detection() to perform the anomaly detection.
 
 ## 4. How to Run the Project
 
-Follow these steps to set up and run the anomaly detection project:
-
 ### 1. Prerequisites
 
-Make sure you have Python installed (version 3.7 or newer is recommended). You will also need `pip`, Python's package installer, which usually comes with Python.
+    * Python installed (version 3.12 or newer).
+    * pip (version 25.1.1, lower might not works).
 
 ### 2. Install Required Libraries
 
-Open your terminal or command prompt and run the following command to install all the necessary Python libraries:
-
-```bash
-pip install torch numpy matplotlib scikit-learn scipy
+    * pip install -r requirements.txt
+    * python3 train_autoencoder.py (for running the learning process)
+    * python3 detection_autoencoder.py (for running anomaly detection)
