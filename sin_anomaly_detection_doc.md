@@ -159,7 +159,8 @@ Mechanizm for imitating real-time anomaly detection process using the pre-traine
     * pip (version 25.1.1, lower might not works).
 
 ### 2. Install Required Libraries
-
+    * python3 -m venv venv_name (to create the virtual environment)
+    * source venv_name/bin/activate
     * pip install -r requirements.txt
     * python3 train_autoencoder.py (for running the learning process)
     * python3 detection_autoencoder.py (for running anomaly detection)
