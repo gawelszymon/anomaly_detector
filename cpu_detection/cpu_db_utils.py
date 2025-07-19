@@ -82,7 +82,7 @@ if __name__ == '__main__':
     else:
         print("An error occurred while fetching training data.")
 
-    test_cpu, test_users, test_time_sin, test_time_cos = fetch_test_data()
+    test_cpu, test_users, test_time_sin, test_time_cos, label = fetch_test_data()
     if test_cpu.size > 0:
         print(f"Downloaded {len(test_cpu)} test records.")
     else:
