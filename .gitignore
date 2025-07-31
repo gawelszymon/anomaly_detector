@@ -1,2 +1,7 @@
 .env
 config.txt
+advanced_autoencoder_cpu.pth
+train_scaler_cpu.pkl
+ad
+__pycache__
+sinx_detection/advanced_autoencoder.pth

@@ -1,5 +1,6 @@
-import cx_Oracle
 import os
+
+import cx_Oracle
 import numpy as np
 from dotenv import load_dotenv
 
@@ -19,55 +20,59 @@ dsn = cx_Oracle.makedsn(
 )
 
 
-def fetch_train_data(): # fetching training data from the database from the train_data table
+def fetch_train_data():
+
+    # Fetch training data from the train_data table.
+    # Returns:
+    # cpu_usage, request_rate, http_errors, time_sin, time_cos (all np.arrays)
+
     connection = cx_Oracle.connect(user=username, password=password, dsn=dsn)
     if not connection:
-        return np.array([]), np.array([]), np.array([]), np.array([])
-    
+        return tuple(np.array([]) for _ in range(5))
     cursor = connection.cursor()
     try:
-        cursor.execute("SELECT cpu, users, time_sin, time_cos FROM train_data ORDER BY id") 
+        cursor.execute("SELECT cpu_usage, request_rate, http_errors, time_sin, time_cos FROM train_data")
         rows = cursor.fetchall()
         if not rows:
-            return np.array([]), np.array([]), np.array([]), np.array([])
-
-        # saving data to numpy arrays
-        cpu_data = np.array([row[0] for row in rows], dtype=np.float32)
-        users_data = np.array([row[1] for row in rows], dtype=np.float32)
-        time_sin_data = np.array([row[2] for row in rows], dtype=np.float32)
-        time_cos_data = np.array([row[3] for row in rows], dtype=np.float32)
-        
-        return cpu_data, users_data, time_sin_data, time_cos_data
+            return tuple(np.array([]) for _ in range(5))
+        cpu_usage = np.array([row[0] for row in rows], dtype=np.float32)
+        request_rate = np.array([row[1] for row in rows], dtype=np.float32)
+        http_errors = np.array([row[2] for row in rows], dtype=np.float32)
+        time_sin = np.array([row[3] for row in rows], dtype=np.float32)
+        time_cos = np.array([row[4] for row in rows], dtype=np.float32)
+        return cpu_usage, request_rate, http_errors, time_sin, time_cos
     except cx_Oracle.DatabaseError as e:
-        print(f"Błąd podczas pobierania danych treningowych: {e}")
-        return np.array([]), np.array([]), np.array([]), np.array([])
+        print(f"Error while fetching training data: {e}")
+        return tuple(np.array([]) for _ in range(5))
     finally:
         if cursor:
             cursor.close()
         if connection:
             connection.close()
 
-# same action as above but for test data
 def fetch_test_data():
+    """
+    Fetch test data from the test_data table.
+    Returns:
+        cpu_usage, request_rate, http_errors, time_sin, time_cos, is_anomaly (all np.arrays)
+    """
     connection = cx_Oracle.connect(user=username, password=password, dsn=dsn)
-
     cursor = connection.cursor()
     try:
-        cursor.execute("SELECT cpu, users, time_sin, time_cos, is_anomaly FROM test_data ORDER BY id")
+        cursor.execute("SELECT cpu_usage, request_rate, http_errors, time_sin, time_cos, is_anomaly FROM test_data")
         rows = cursor.fetchall()
         if not rows:
-            return np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
-
-        cpu_data = np.array([row[0] for row in rows], dtype=np.float32)
-        users_data = np.array([row[1] for row in rows], dtype=np.float32)
-        time_sin_data = np.array([row[2] for row in rows], dtype=np.float32)
-        time_cos_data = np.array([row[3] for row in rows], dtype=np.float32)
-        is_anomaly_db = np.array([row[4] for row in rows], dtype=np.int32)
-        
-        return cpu_data, users_data, time_sin_data, time_cos_data, is_anomaly_db
+            return tuple(np.array([]) for _ in range(6))
+        cpu_usage = np.array([row[0] for row in rows], dtype=np.float32)
+        request_rate = np.array([row[1] for row in rows], dtype=np.float32)
+        http_errors = np.array([row[2] for row in rows], dtype=np.float32)
+        time_sin = np.array([row[3] for row in rows], dtype=np.float32)
+        time_cos = np.array([row[4] for row in rows], dtype=np.float32)
+        is_anomaly = np.array([row[5] for row in rows], dtype=np.int32)
+        return cpu_usage, request_rate, http_errors, time_sin, time_cos, is_anomaly
     except cx_Oracle.DatabaseError as e:
-        print(f"Błąd podczas pobierania danych testowych: {e}")
-        return np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+        print(f"Error while fetching test data: {e}")
+        return tuple(np.array([]) for _ in range(6))
     finally:
         if cursor:
             cursor.close()
@@ -75,15 +80,14 @@ def fetch_test_data():
             connection.close()
 
 if __name__ == '__main__':
-    # cpu_data, users_data, time_sin_data, time_cos_data
-    train_cpu, train_users, train_time_sin, train_time_cos = fetch_train_data()
-    if train_cpu.size > 0:
-        print(f"Downloaded {len(train_cpu)} train records.")
+    train = fetch_train_data()
+    if train[0].size > 0:
+        print(f"Downloaded {len(train[0])} train records.")
     else:
         print("An error occurred while fetching training data.")
 
-    test_cpu, test_users, test_time_sin, test_time_cos, label = fetch_test_data()
-    if test_cpu.size > 0:
-        print(f"Downloaded {len(test_cpu)} test records.")
+    test = fetch_test_data()
+    if test[0].size > 0:
+        print(f"Downloaded {len(test[0])} test records.")
     else:
         print("An error occurred while fetching test data.")
